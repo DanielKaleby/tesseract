@@ -59,7 +59,11 @@ impl Solve {
         }
     }
     pub fn time(&self) -> String {
+    if self._dnf {
+        String::from("DNF")
+    } else {
         timer::format_from_ms(self.time)
+    }
     }
 }
 
