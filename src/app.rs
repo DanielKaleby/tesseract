@@ -85,11 +85,15 @@ impl cosmic::Application for AppModel {
         let state = cosmic::cosmic_config::Config::new_state(Self::APP_ID, 1).unwrap();
 
         // keybinds — action -> key map, loaded from config (or defaults if not present)
+        // TODO: merge with defaults instead of replacing — new actions won't show up for existing users otherwise
         let keybinds = config
             .get::<HashMap<String, String>>("keybinds")
             .unwrap_or_else(|_| {
                 let mut defaults = HashMap::new();
                 defaults.insert("start_stop".to_string(), " ".to_string());
+                defaults.insert("cancel".to_string(), "Escape".to_string());
+                defaults.insert("dnf".to_string(), "3".to_string());
+                defaults.insert("normal".to_string(), "1".to_string());
                 defaults
             });
 
@@ -449,6 +453,10 @@ impl cosmic::Application for AppModel {
             Message::KeyPressed(key) => {
                 if self.is_bound_key("cancel", &key) {
                     self.cancel_timer();
+                } else if self.is_bound_key("dnf", &key) {
+                    self.set_last_solve_dnf(true);
+                } else if self.is_bound_key("normal", &key) && self.timer.status == Status::Stopped {
+                    self.set_last_solve_dnf(false);
                 } else if self.is_bound_key("start_stop", &key) {
                     self.space_pressed = true;
                     if self.timer.status == Status::Running {
@@ -555,6 +563,13 @@ impl AppModel {
             Status::Stopped => {}
         }
     }
+    fn set_last_solve_dnf(&mut self, dnf: bool) {
+    if let Some(last) = self.record.solves.first_mut() {
+        last.dnf = dnf;
+        self.record.recalc_averages();
+        self.save_record();
+    }
+}
 }
 
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
@@ -581,6 +596,14 @@ impl menu::action::MenuAction for MenuAction {
 fn key_to_string(key: cosmic::iced::keyboard::Key<&str>) -> Option<String> {
     match key {
         cosmic::iced::keyboard::Key::Character(s) => Some(s.to_string()),
+        cosmic::iced::keyboard::Key::Named(named) => named_key_to_string(named),
+        _ => None,
+    }
+}
+
+fn named_key_to_string(named: keyboard::key::Named) -> Option<String> {
+    match named {
+        keyboard::key::Named::Escape => Some("Escape".to_string()),
         _ => None,
     }
 }
