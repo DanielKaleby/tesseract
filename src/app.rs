@@ -447,7 +447,9 @@ impl cosmic::Application for AppModel {
                 self.timer.time = self.stopwatch.elapsed().as_millis() as u32;
             }
             Message::KeyPressed(key) => {
-                if self.is_bound_key("start_stop", &key) {
+                if self.is_bound_key("cancel", &key) {
+                    self.cancel_timer();
+                } else if self.is_bound_key("start_stop", &key) {
                     self.space_pressed = true;
                     if self.timer.status == Status::Running {
                         self.timer.time = self.stopwatch.elapsed().as_millis() as u32;
@@ -539,6 +541,19 @@ impl AppModel {
     }
     fn is_bound_key(&self, action: &str, key: &str) -> bool {
     self.keybinds.get(action).map(|k| k.as_str()) == Some(key)
+    }
+    fn cancel_timer(&mut self) {
+        match self.timer.status {
+            Status::Hold | Status::Ready => {
+                self.timer.status = Status::Stopped;
+            }
+            Status::Running => {
+                self.stopwatch.stop();
+                self.timer.time = 0;
+                self.timer.status = Status::Stopped;
+            }
+            Status::Stopped => {}
+        }
     }
 }
 
