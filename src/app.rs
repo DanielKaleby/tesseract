@@ -292,7 +292,7 @@ impl cosmic::Application for AppModel {
                         .push(
                             container(
                                 widget::text::body(format!("{}", solve.scramble.join(" ")))
-                                    .size(16)
+                                    .size(18)
                                     .width(Length::Fill),
                             )
                             .padding(active_theme.cosmic().space_s())
@@ -302,7 +302,14 @@ impl cosmic::Application for AppModel {
                             container(
                                 widget::text::body(format!("{}", solve.time()))
                                     .size(22)
-                                    .align_x(Alignment::Center),
+                                    .align_x(Alignment::Center)
+                                    .class(cosmic::theme::style::Text::Color(
+                                        if solve.time() == "DNF" {
+                                            active_theme.cosmic().control_6().into()
+                                        } else {
+                                            active_theme.cosmic().on_bg_color().into()
+                                        },
+                                    )),
                             )
                             .padding(active_theme.cosmic().space_s()),
                         )

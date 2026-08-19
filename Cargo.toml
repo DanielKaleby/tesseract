@@ -5,12 +5,12 @@ edition = "2024"
 license = "GPL-3.0"
 description = "A speed cubing timer for the COSMIC™ desktop."
 repository = "https://github.com/cappsyco/tesseract"
-authors = ["Jonathan Capps", "Jonathan Capps <cappsy@gmail.com>"]
+authors = ["Jonathan Capps", "Jonathan Capps <hello@cappsy.dev>"]
 
 [dependencies]
-futures-util = "0.3.33"
+futures-util = "0.3.34"
 i18n-embed-fl = "0.10.1"
-open = "5.4.0"
+open = "5.4.1"
 rand = "0.10.2"
 regex = "1.13.1"
 rust-embed = "8.12.0"
