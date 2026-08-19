@@ -33,6 +33,7 @@ pub struct AppModel {
     state: Config,
     dialog_pages: VecDeque<DialogPage>,
     space_pressed: bool,
+    keybinds: HashMap<String, String>,
     current_cube: Cube,
     cube_options: Vec<Cube>,
     cube_options_labels: Vec<String>,
@@ -48,8 +49,8 @@ pub enum Message {
     ToggleContextPage(ContextPage),
     Rescramble,
     TimerTick,
-    SpacePressed,
-    SpaceReleased,
+    KeyPressed(String),
+    KeyReleased(String),
     SpaceHeld,
     OpenUrl(String),
     CubeUpdate(usize),
@@ -83,6 +84,15 @@ impl cosmic::Application for AppModel {
         let config = cosmic::cosmic_config::Config::new(Self::APP_ID, 1).unwrap();
         let state = cosmic::cosmic_config::Config::new_state(Self::APP_ID, 1).unwrap();
 
+        // keybinds — action -> key map, loaded from config (or defaults if not present)
+        let keybinds = config
+            .get::<HashMap<String, String>>("keybinds")
+            .unwrap_or_else(|_| {
+                let mut defaults = HashMap::new();
+                defaults.insert("start_stop".to_string(), " ".to_string());
+                defaults
+            });
+
         // cube values
         let current_cube = state.get::<Cube>("current_cube").unwrap_or_default();
         let cube_options = vec![
@@ -115,6 +125,7 @@ impl cosmic::Application for AppModel {
                 .unwrap_or_default(),
             timer: Timer::default(),
             space_pressed: false,
+            keybinds,
             record,
             stopwatch: Stopwatch::new(),
             about_page: build_about(),
@@ -353,14 +364,12 @@ impl cosmic::Application for AppModel {
     fn subscription(&self) -> Subscription<Self::Message> {
         Subscription::batch(vec![
             event::listen_with(|event, _status, _window_id| match event {
-                Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => match key.as_ref() {
-                    cosmic::iced::keyboard::Key::Character(" ") => Some(Message::SpacePressed),
-                    _ => None,
-                },
-                Event::Keyboard(keyboard::Event::KeyReleased { key, .. }) => match key.as_ref() {
-                    cosmic::iced::keyboard::Key::Character(" ") => Some(Message::SpaceReleased),
-                    _ => None,
-                },
+                Event::Keyboard(keyboard::Event::KeyPressed { key, .. }) => {
+                    key_to_string(key.as_ref()).map(Message::KeyPressed)
+                }
+                Event::Keyboard(keyboard::Event::KeyReleased { key, .. }) => {
+                    key_to_string(key.as_ref()).map(Message::KeyReleased)
+                }
                 // TODO: Add mouse / touch bindings
                 _ => None,
             }),
@@ -437,28 +446,32 @@ impl cosmic::Application for AppModel {
             Message::TimerTick => {
                 self.timer.time = self.stopwatch.elapsed().as_millis() as u32;
             }
-            Message::SpacePressed => {
-                self.space_pressed = true;
-                if self.timer.status == Status::Running {
-                    self.timer.time = self.stopwatch.elapsed().as_millis() as u32;
-                    let solve = Solve::new(self.timer.time, &self.current_scramble);
-                    self.timer.status = Status::Stopped;
-                    self.record.add_solve(solve);
-                    self.save_record();
-                    self.rescramble();
-                } else if self.timer.status == Status::Stopped {
-                    self.timer.status = Status::Hold;
+            Message::KeyPressed(key) => {
+                if self.is_bound_key("start_stop", &key) {
+                    self.space_pressed = true;
+                    if self.timer.status == Status::Running {
+                        self.timer.time = self.stopwatch.elapsed().as_millis() as u32;
+                        let solve = Solve::new(self.timer.time, &self.current_scramble);
+                        self.timer.status = Status::Stopped;
+                        self.record.add_solve(solve);
+                        self.save_record();
+                        self.rescramble();
+                    } else if self.timer.status == Status::Stopped {
+                        self.timer.status = Status::Hold;
+                    }
                 }
             }
-            Message::SpaceReleased => {
-                self.space_pressed = false;
-                if self.timer.status == Status::Ready {
-                    self.timer.time = 0;
-                    self.stopwatch.reset_and_start();
-                    self.timer.status = Status::Running;
-                } else {
-                    self.timer.status = Status::Stopped;
-                    self.stopwatch.stop();
+            Message::KeyReleased(key) => {
+                if self.is_bound_key("start_stop", &key) {
+                    self.space_pressed = false;
+                    if self.timer.status == Status::Ready {
+                        self.timer.time = 0;
+                        self.stopwatch.reset_and_start();
+                        self.timer.status = Status::Running;
+                    } else {
+                        self.timer.status = Status::Stopped;
+                        self.stopwatch.stop();
+                    }
                 }
             }
             Message::SpaceHeld => {
@@ -524,6 +537,9 @@ impl AppModel {
             .config
             .set(self.current_cube.config_key(), &self.record);
     }
+    fn is_bound_key(&self, action: &str, key: &str) -> bool {
+    self.keybinds.get(action).map(|k| k.as_str()) == Some(key)
+    }
 }
 
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
@@ -544,6 +560,13 @@ impl menu::action::MenuAction for MenuAction {
         match self {
             MenuAction::About => Message::ToggleContextPage(ContextPage::About),
         }
+    }
+}
+
+fn key_to_string(key: cosmic::iced::keyboard::Key<&str>) -> Option<String> {
+    match key {
+        cosmic::iced::keyboard::Key::Character(s) => Some(s.to_string()),
+        _ => None,
     }
 }
 
