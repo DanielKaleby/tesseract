@@ -1,7 +1,7 @@
 use crate::timer;
-use std::time::SystemTime;
 use cosmic::cosmic_config::{self, CosmicConfigEntry, cosmic_config_derive::CosmicConfigEntry};
 use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Serialize, Deserialize)]
 pub enum Cube {
@@ -42,28 +42,31 @@ pub struct Solve {
     pub time: u32,
     pub timestamp: Option<u64>,
     pub scramble: Vec<String>,
-    pub _dnf: bool,
+    #[serde(alias = "_dnf")]
+    pub dnf: bool,
     pub _plus_two: bool,
 }
 impl Solve {
     pub fn new(time: u32, scramble: &Vec<String>) -> Solve {
         Self {
             time,
-            timestamp: Some(SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs()),
+            timestamp: Some(
+                SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            ),
             scramble: scramble.clone(),
-            _dnf: false,
+            dnf: false,
             _plus_two: false,
         }
     }
     pub fn time(&self) -> String {
-    if self._dnf {
-        String::from("DNF")
-    } else {
-        timer::format_from_ms(self.time)
-    }
+        if self.dnf {
+            String::from("DNF")
+        } else {
+            timer::format_from_ms(self.time)
+        }
     }
 }
 
@@ -89,8 +92,8 @@ impl Record {
     }
     pub fn recalc_averages(&mut self) {
         // Recalculate averages (called after adding or removing a solve)
-        self.ao5   = calc_average(&self.solves, 5);
-        self.ao12  = calc_average(&self.solves, 12);
+        self.ao5 = calc_average(&self.solves, 5);
+        self.ao12 = calc_average(&self.solves, 12);
         self.ao100 = calc_average(&self.solves, 100);
     }
     pub fn add_solve(&mut self, solve: Solve) {
@@ -127,7 +130,7 @@ fn calc_average(solves: &[Solve], ao: usize) -> Average {
     // Map solves to times, converting DNFs to u32::MAX
     let mut times: Vec<u32> = last_n
         .iter()
-        .map(|s| if s._dnf { u32::MAX } else { s.time })
+        .map(|s| if s.dnf { u32::MAX } else { s.time })
         .collect();
     // Sort: real times first, DNFs last
     times.sort();
