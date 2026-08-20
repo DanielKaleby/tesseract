@@ -22,7 +22,7 @@ In order of priority (balance between value and effort):
 - Special indication when you achieve a new PB and highlight it in your record
 - UI enhancements (e.g., scramble image visualization and 'hide timer while solving' option)
 - Inspection time for current puzzles (e.g., 15sec for 3x3x3)+Automatic +2/DNF\*
-- Keybinds (e.g., 'esc' to cancel the timer start, 'e/E' to cycle between events and 'n' to generate the next scramble)
+- More keybinds (e.g., 'e/E' to cycle between events and 'n'/'ctrl'+'r' to generate the next scramble)
 - WCA compliant scrambles
   - Proper support for all WCA events (e.g., dedicated entries with predefined configurations for BLD).
 - Support for missing WCA puzzles (i.e., Megaminx, Pyraminx, Skewb, Square-1, Clock)
@@ -51,6 +51,19 @@ You're going to need to make sure you have the ability to compile Rust binaries,
 git clone https://github.com/cappsyco/tesseract && cd tesseract
 just build-release
 sudo just install
+```
+
+### Current keybinds
+
+Customizable in `~/.config/cosmic/uk.co.cappsy.Tesseract/v1/keybinds`
+
+```ron
+{
+    "start_stop": " ",
+    "cancel": "Escape",
+    "dnf": "3",
+    "normal": "1",
+}
 ```
 
 ## Translators
