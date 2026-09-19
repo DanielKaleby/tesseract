@@ -3,6 +3,7 @@
 mod app;
 mod i18n;
 mod record;
+mod records;
 mod timer;
 
 fn main() -> cosmic::iced::Result {
