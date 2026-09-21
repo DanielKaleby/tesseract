@@ -6,17 +6,17 @@ pub struct Solve {
     pub event_id: String,
     pub time_ms: i64,
     pub scramble: String,
-    pub penalty: i64, // 0 = normal, -1 = DNF, positive = penalty in ms
+    pub penalty_ms: i64, // 0 = normal, -1 = DNF, positive = penalty in ms
     pub comment: Option<String>,
-    pub created_at: i64,
+    pub solved_at: i64,
 }
 
 impl Solve {
     pub fn time(&self) -> String {
-        if self.penalty < 0 {
+        if self.penalty_ms < 0 {
             "DNF".to_string()
         } else {
-            crate::timer::format_from_ms((self.time_ms + self.penalty.max(0)) as u32)
+            crate::timer::format_from_ms((self.time_ms + self.penalty_ms.max(0)) as u32)
         }
     }
 }
@@ -46,7 +46,7 @@ pub fn calc_average(recent_solves: &[Solve], ao: u32) -> Average {
     // Map solves to times, converting DNFs to i64::MAX
     let mut times: Vec<i64> = recent_solves
         .iter()
-        .map(|s| if s.penalty < 0 { i64::MAX } else { s.time_ms + s.penalty.max(0) })
+        .map(|s| if s.penalty_ms < 0 { i64::MAX } else { s.time_ms + s.penalty_ms.max(0) })
         .collect();
     // Sort: real times first, DNFs last
     times.sort();
@@ -79,9 +79,9 @@ impl Records {
                 event_id TEXT NOT NULL,
                 time_ms INTEGER NOT NULL,
                 scramble TEXT NOT NULL,
-                penalty INTEGER NOT NULL DEFAULT 0,
+                penalty_ms INTEGER NOT NULL DEFAULT 0,
                 comment TEXT,
-                created_at INTEGER NOT NULL
+                solved_at INTEGER NOT NULL
             )",
             (),
         )?;
@@ -90,7 +90,7 @@ impl Records {
 
     pub fn log(&self, event_id: &str, time_ms: i64, scramble: &str) -> Result<i64> {
         self.conn.execute(
-            "INSERT INTO solves (event_id, time_ms, scramble, penalty, created_at)
+            "INSERT INTO solves (event_id, time_ms, scramble, penalty_ms, solved_at)
              VALUES (?1, ?2, ?3, 0, strftime('%s','now'))",
             params![event_id, time_ms, scramble],
         )?;
@@ -107,18 +107,18 @@ impl Records {
         Ok(())
     }
 
-    pub fn set_penalty(&self, id: i64, penalty: i64) -> Result<()> {
+    pub fn set_penalty(&self, id: i64, penalty_ms: i64) -> Result<()> {
         self.conn.execute(
-            "UPDATE solves SET penalty = ?1 WHERE id = ?2",
-            params![penalty, id],
+            "UPDATE solves SET penalty_ms = ?1 WHERE id = ?2",
+            params![penalty_ms, id],
         )?;
         Ok(())
     }
 
     pub fn latest(&self, event_id: &str, n: u32) -> Result<Vec<Solve>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, event_id, time_ms, scramble, penalty, comment, created_at
-             FROM solves WHERE event_id = ?1 ORDER BY created_at DESC LIMIT ?2",
+            "SELECT id, event_id, time_ms, scramble, penalty_ms, comment, solved_at
+             FROM solves WHERE event_id = ?1 ORDER BY solved_at DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![event_id, n], |row| {
             Ok(Solve {
@@ -126,9 +126,9 @@ impl Records {
                 event_id: row.get(1)?,
                 time_ms: row.get(2)?,
                 scramble: row.get(3)?,
-                penalty: row.get(4)?,
+                penalty_ms: row.get(4)?,
                 comment: row.get(5)?,
-                created_at: row.get(6)?,
+                solved_at: row.get(6)?,
             })
         })?;
         rows.collect()
@@ -136,7 +136,7 @@ impl Records {
 
     pub fn personal_best(&self, event_id: &str) -> Result<Option<i64>> {
         self.conn.query_row(
-            "SELECT MIN(time_ms) FROM solves WHERE event_id = ?1 AND penalty >= 0",
+            "SELECT MIN(time_ms) FROM solves WHERE event_id = ?1 AND penalty_ms >= 0",
             [event_id],
             |row| row.get(0),
         )
