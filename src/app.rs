@@ -586,16 +586,16 @@ impl AppModel {
         self.ao100 = self.records.average(event_id, 100).unwrap_or(records::Average::Incomplete);
     }
 
-    fn set_last_solve_penalty(&mut self, penalty: i64) {
+    fn set_last_solve_penalty(&mut self, penalty_ms: i64) {
         if let Some(last) = self.solves.first() {
-            let _ = self.records.set_penalty(last.id, penalty);
+            let _ = self.records.set_penalty(last.id, penalty_ms);
             self.refresh_stats();
         }
     }
 
     fn cycle_last_solve_penalty(&mut self) {
         if let Some(last) = self.solves.first() {
-            let next = if last.penalty >= 0 { last.penalty + PENALTY_STEP_MS } else { PENALTY_STEP_MS };
+            let next = if last.penalty_ms >= 0 { last.penalty_ms + PENALTY_STEP_MS } else { PENALTY_STEP_MS };
             let _ = self.records.set_penalty(last.id, next);
             self.refresh_stats();
         }
