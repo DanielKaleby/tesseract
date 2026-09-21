@@ -116,7 +116,7 @@ impl cosmic::Application for AppModel {
         let cube_options_labels: Vec<String> = cube_options.iter().map(|t| t.as_string()).collect();
 
         // open the solves database
-        let data_dir = directories::ProjectDirs::from("uk.co", "cappsy", "Tesseract")
+        let data_dir = directories::ProjectDirs::from("uk.co", "cappsy", "Tesseract-timer")
             .expect("could not determine data directory");
         std::fs::create_dir_all(data_dir.data_dir()).expect("failed to create data directory");
         let records = Records::open(&data_dir.data_dir().join("records.db"))
