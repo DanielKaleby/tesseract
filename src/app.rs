@@ -104,7 +104,11 @@ impl cosmic::Application for AppModel {
             });
 
         // cube values
-        let current_cube = state.get::<Cube>("current_cube").unwrap_or_default();
+        let current_cube = state
+            .get::<String>("current_cube")
+            .ok()
+            .and_then(|id| Cube::from_id(&id))
+            .unwrap_or_default();
         let cube_options = vec![
             Cube::Two,
             Cube::Three,

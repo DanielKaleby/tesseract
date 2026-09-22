@@ -24,12 +24,24 @@ impl Cube {
     }
     pub fn config_key(&self) -> &str {
         match self {
-            Cube::Two => "record_two",
-            Cube::Three => "record_three",
-            Cube::Four => "record_four",
-            Cube::Five => "record_five",
-            Cube::Six => "record_six",
-            Cube::Seven => "record_seven",
+            Cube::Two => "E222",
+            Cube::Three => "E333",
+            Cube::Four => "E444",
+            Cube::Five => "E555",
+            Cube::Six => "E666",
+            Cube::Seven => "E777",
+        }
+    }
+    // needed to read/write current_cube as "E333" instead of "Three"
+    pub fn from_id(id: &str) -> Option<Cube> {
+        match id {
+            "E222" => Some(Cube::Two),
+            "E333" => Some(Cube::Three),
+            "E444" => Some(Cube::Four),
+            "E555" => Some(Cube::Five),
+            "E666" => Some(Cube::Six),
+            "E777" => Some(Cube::Seven),
+            _ => None,
         }
     }
 }
