@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 
 use crate::fl;
-use crate::record::Cube;
+use crate::cube::Cube;
 use crate::records::{self, Records};
 use crate::timer::{Status, Timer};
 use cosmic::app::context_drawer::{self, ContextDrawer};
